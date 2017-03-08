@@ -6,7 +6,7 @@ The source code for the second major version of Transformice module [#utility](h
 
 ## Segments
 
-It was designed to be a large project where "segments" can be dynamically loaded in and out, allowing for parts of other modules and tools to be loaded when needed, yet not take runtime when unnecessary.
+Utility 2.0's infrastructure was designed so that "segments" can be dynamically loaded in and out, allowing for parts of other modules and tools to be loaded when needed, yet not take runtime when unnecessary.
 
 In #utility, this lets the player use whatever they want to have fun with at any given time without restraint, potentially even coming up with their own game modes using the available features.
 
