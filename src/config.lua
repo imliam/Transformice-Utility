@@ -1,0 +1,14 @@
+SETTINGS={
+    VOTE_TIME={
+        votes={},
+        maxVotes=6,
+        timeToAdd=30
+    },
+    VOTE_SKIP={
+        votes={}
+    },
+    SKILLS=true,
+    ROTATION={tribehouse=true},
+    DISABLEAUTONEWGAME=nil,
+    QUICKRESPAWN=true,
+}
