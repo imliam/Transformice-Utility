@@ -4,6 +4,8 @@ The source code for the second major version of Transformice module [#utility](h
 
 **This code will not run properly except for members of the [Module Team](http://atelier801.com/topic?f=5&t=691642).**
 
+If you wish to play this module in-game, you can use the semi-official module `#shamousey` by going to `/room #shamousey0[your username]` or in your tribe house with the command `/module #shamousey`
+
 ## Segments
 
 Utility 2.0's infrastructure was designed so that "segments" can be dynamically loaded in and out, allowing for parts of other modules and tools to be loaded when needed, yet not take runtime when unnecessary.
