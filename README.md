@@ -14,3 +14,25 @@ This concept also allows for segments to be launched at the beginning of the mod
 - **#pictionary** - Using the `draw` segment to allow drawing with colorjoints on the map.
 - **#prophunt** - Using the `images` segment to allow a player to become an image, the `hide` segment to hide their player from the map, and the `prophunt` segment to set their image to nearby props on the map.
 - **#retro** - The map rotation and map XML helpers allow for dynamically loading in background images for maps, which opens up the possibility for recreating maps using the game's old graphics. Additional segments can enable individual event maps' functionality, such as `movecheese` to move the cheese's position on the map every time someone gets it, `nogravmove` to move in 0 gravity, and `images` to get a fake broomstick, which when put together can create the Halloween 2010 event map.
+
+## Building
+
+There is a simple NodeJS build script (in the form of `combine.js`) included in this repository that automatically combines all of the necessary files in the right order, ready to be executed in-game quickly.
+
+To change the list of files and directories to combine when building, or access other build options, you can use `build.js`.
+
+### Getting started with builds
+
+1. Install NodeJS and NPM - https://nodejs.org/
+
+2. From the repository's directory, run the command `npm install` to download dependencies (needed for the watch command)
+
+### Building the script
+
+To do a simple build, run the command `npm run build`
+
+Alternatively, you can watch the `src` directory to automatically build every time a file inside it is changed by runniing the command `npm run watch`
+
+### Update public staff list
+
+You can fetch the latest list of public staff members by running the command `npm run staff`, which checks each of the lists at http//atelier801.com/staff and scrapes them, saving each member in a Lua table located in `src/staff.lua` which is then included in the build process.
