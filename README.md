@@ -33,7 +33,7 @@ To change the list of files and directories to combine when building, or access 
 
 To do a simple build, run the command `npm run build`
 
-Alternatively, you can watch the `src` directory to automatically build every time a file inside it is changed by runniing the command `npm run watch`
+Alternatively, you can watch the `src` directory to automatically build every time a file inside it is changed by running the command `npm run watch`
 
 ### Update public staff list
 
