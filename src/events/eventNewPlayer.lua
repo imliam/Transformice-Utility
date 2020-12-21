@@ -37,7 +37,7 @@ function eventNewPlayer(name)
     if tribeName then
         if string.byte(tfm.get.room.name,2)==3 and (tfm.get.room.name:lower()):match(tfm.get.room.playerList[name].tribeName:lower())then
             ranks[name]=4
-        elseif suffix and ((suffix:lower()):match(name:lower()) or (suffix:lower()):match(tfm.get.room.playerList[name].tribeName:lower())) then
+        elseif suffix and ((suffix:lower()):match(name:lower()) or (suffix:lower()):match(string.escape(tfm.get.room.playerList[name].tribeName:lower()))) then
             ranks[name]=4
         end
     end

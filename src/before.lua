@@ -9,13 +9,7 @@ SPAWNEDOBJS = {}
 _S = {}
 
 ranks={
-    -- Contributors
-    Shamousey=5,
-    Evilsantah=5,
-    Moduleapi=5,
-    Jamesqwartz=5,
-    Velspar=5,
-    Eshkation=5,
+    ['Shamousey#0015']=5,
 }
 
 RANKS={
