@@ -13,6 +13,10 @@ function string.split(str,s)
     return res
 end
 
+function string.escape(str)
+    return string.gsub(str, "[%(%)%.%+%-%*%?%[%]%^%$%%]", "%%%1")
+end
+
 function table.getl(rawTable)
     local count = 0
     for index in pairs(rawTable) do
