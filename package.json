@@ -9,7 +9,6 @@
   "scripts": {
     "build": "node build.js",
     "watch": "node build.js watch",
-    "minify": "node build.js minify",
-    "staff": "node staff.js"
+    "minify": "node build.js minify"
   }
 }
