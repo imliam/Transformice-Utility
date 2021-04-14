@@ -1446,10 +1446,9 @@ function playersAlive()
 end
 
 function shouldBeAdmin(player)
-    local isStaff = player.hashTag == '0001' or player.hashTag == '0010' or player.hashTag == '0015' or player.hashTag == '0020'
-
+    local hashTag = getHashTag(player.name)
+    local isStaff = hashTag == '0001' or hashTag == '0010' or hashTag == '0015' or hashTag == '0020'
     local isTribeRoom = string.byte(tfm.get.room.name, 2) == 3
-
     local roomName = getInternalRoomName()
 
     if isStaff then
@@ -1457,6 +1456,10 @@ function shouldBeAdmin(player)
     end
 
     if isTribeRoom and player.tribeName and roomName:lower() == player.tribeName:lower() then
+        return true
+    end
+
+    if player.tribeName and roomName:lower() == player.tribeName:lower() then
         return true
     end
 
@@ -1479,11 +1482,17 @@ function getInternalRoomName()
         return tfm.get.room.name:sub(2)
     end
 
-    if string.find(tfm.get.room.name:sub(1,2)=="e2" then
+    if tfm.get.room.name:sub(1,2)=="e2" then
         roomName = tfm.get.room.name:sub(3)
     end
 
-    return roomName:match("%d+(.+)$")
+    roomName = roomName:match("[%d% ]+(.+)$")
+
+    if roomName == nil then
+        return ""
+    end
+
+    return roomName
 end
 
 function getHashTag(name)
@@ -1493,7 +1502,7 @@ function getHashTag(name)
         return '0000'
     end
 
-    return tag
+    return hashTag
 end
 
 function getNameWithoutHashTag(name)
@@ -1924,6 +1933,9 @@ function eventNewPlayer(name)
         name=name,
         lang=tfm.get.room.playerList[name].community or "en"
     }
+    if tfm.get.room.playerList[name].tribeName then
+        player.tribeName = tfm.get.room.playerList[name].tribeName
+    end
     if not ranks[name] then
         ranks[name]=1
     end
@@ -1957,6 +1969,7 @@ function eventNewPlayer(name)
     end
 
     if not ranks[name] then
+        tfm.exec.chatMessage("ok")
         ranks[name]=1
     end
 
@@ -5752,7 +5765,7 @@ _S.mapImage = {
                 layerData = string.split(layerData, ",")
                 local layerType = (_S.mapImage.layers[layerData[2]:sub(0,2)] or "")..(layerData[2]:sub(3) or "")
                 tfm.exec.addImage(layerData[1] or "", layerType, layerData[3] or 0, layerData[4] or 0, player.name)
-            end             
+            end
         end,
     },
 }
