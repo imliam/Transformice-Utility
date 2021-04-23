@@ -79,3 +79,64 @@ function playersAlive()
     end
     return i
 end
+
+function shouldBeAdmin(player)
+    local isStaff = player.hashTag == '0001' or player.hashTag == '0010' or player.hashTag == '0015' or player.hashTag == '0020'
+
+    local isTribeRoom = string.byte(tfm.get.room.name, 2) == 3
+
+    local roomName = getInternalRoomName()
+
+    if isStaff then
+        return true
+    end
+
+    if isTribeRoom and player.tribeName and roomName:lower() == player.tribeName:lower() then
+        return true
+    end
+
+    if roomName:lower() == player.name:lower() then
+        return true
+    end
+
+    if getHashTag(player.name) == '0000' and roomName:lower() == getNameWithoutHashTag(player.name):lower() then
+        return true
+    end
+
+    return false
+end
+
+function getInternalRoomName()
+    local isTribeRoom = string.byte(tfm.get.room.name, 2) == 3
+    local roomName = tfm.get.room.name
+
+    if isTribeRoom then
+        return tfm.get.room.name:sub(2)
+    end
+
+    if string.find(tfm.get.room.name:sub(1,2)=="e2" then
+        roomName = tfm.get.room.name:sub(3)
+    end
+
+    return roomName:match("%d+(.+)$")
+end
+
+function getHashTag(name)
+    local hashTag = name:match("#(.*)")
+
+    if (hashTag == nil) then
+        return '0000'
+    end
+
+    return tag
+end
+
+function getNameWithoutHashTag(name)
+    local nameWithoutHashTag = name:match("(.*)#")
+
+    if (nameWithoutHashTag == nil) then
+        return name
+    end
+
+    return nameWithoutHashTag
+end

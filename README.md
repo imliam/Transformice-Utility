@@ -34,7 +34,3 @@ To change the list of files and directories to combine when building, or access 
 To do a simple build, run the command `npm run build`
 
 Alternatively, you can watch the `src` directory to automatically build every time a file inside it is changed by running the command `npm run watch`
-
-### Update public staff list
-
-You can fetch the latest list of public staff members by running the command `npm run staff`, which checks each of the lists at http//atelier801.com/staff and scrapes them, saving each member in a Lua table located in `src/staff.lua` which is then included in the build process.
