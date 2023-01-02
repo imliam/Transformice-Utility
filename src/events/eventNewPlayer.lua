@@ -27,23 +27,19 @@ function eventNewPlayer(name)
     if showChangelog(7,3,player) then
         tfm.exec.chatMessage(showChangelog(7,3,player),name)
     end
-    
+
     -- Show random greeting message
     local greets=translate("greetings",player.lang)
     tfm.exec.chatMessage("<J>"..greets[math.random(#greets)],name)
 
-    -- Ranks
-    local tribeName=tfm.get.room.playerList[name].tribeName
-    if tribeName then
-        if string.byte(tfm.get.room.name,2)==3 and (tfm.get.room.name:lower()):match(tfm.get.room.playerList[name].tribeName:lower())then
-            ranks[name]=4
-        elseif suffix and ((suffix:lower()):match(name:lower()) or (suffix:lower()):match(string.escape(tfm.get.room.playerList[name].tribeName:lower()))) then
-            ranks[name]=4
-        end
+    if (shouldBeAdmin(player)) then
+        ranks[name] = 4
     end
+
     if not ranks[name] then
         ranks[name]=1
     end
+
     if ranks[name]>=RANKS.ROOM_ADMIN then
         for n,r in pairs(ranks) do
             if r>=RANKS.ROOM_ADMIN and players[n]then

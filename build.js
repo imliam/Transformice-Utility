@@ -9,7 +9,6 @@ combine(
         'src/before.lua',
         'src/config.lua',
         'src/translations',
-        'src/staff.lua',
         'src/changelog.lua',
         'src/maps',
         'src/lib',
