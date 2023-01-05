@@ -742,7 +742,7 @@ _S.global = {
                     end
                 end
             },
-            deadmin={rank=RANKS.ROOM_OWNER,fnc=function(player,...) _S.global.callbacks.chatCommand.lock.fnc(player,...) end},
+            deadmin={rank=RANKS.ROOM_OWNER,fnc=function(player,...) _S.global.callbacks.chatCommand.unadmin.fnc(player,...) end},
             lock={
                 rank=RANKS.ROOM_ADMIN,
                 fnc=function(player,num)
