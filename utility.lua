@@ -1598,7 +1598,9 @@ function activateSegment(name,segment)
         s.onEnable(players[name])
     end
     players[name].activeSegments[segment]=true
-    _S.global.showMenu(name)
+    if s.menu then
+        _S.global.showMenu(name)
+    end
 end
 
 function deactivateSegment(name,segment)
@@ -1634,7 +1636,9 @@ function deactivateSegment(name,segment)
         s.onDisable(players[name])
     end
     players[name].activeSegments[segment]=nil
-    _S.global.showMenu(name)
+    if s.menu then
+        _S.global.showMenu(name)
+    end
 end
 
 function bindChatCommands()
