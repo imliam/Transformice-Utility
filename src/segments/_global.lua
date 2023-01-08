@@ -350,7 +350,11 @@ _S.global = {
                 fnc=function(player,...)
                     local arg={...}
                     executeCommand(player,function(target,time)
-                        players[target].conjTime=time or 10
+                        if time ~= nil and not tonumber(time) then
+                            tfm.exec.chatMessage(translate("invalidargument",player.lang),player.name)
+                            return
+                        end
+                        players[target].conjTime=tonumber(time) or 10
                         toggleSegment(target, "conj", not arg[1] and not players[target].activeSegments.conj or arg[1] and true)
                     end,arg)
                 end
