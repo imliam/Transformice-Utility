@@ -1598,7 +1598,9 @@ function activateSegment(name,segment)
         s.onEnable(players[name])
     end
     players[name].activeSegments[segment]=true
-    _S.global.showMenu(name)
+    if s.menu then
+        _S.global.showMenu(name)
+    end
 end
 
 function deactivateSegment(name,segment)
@@ -1634,7 +1636,9 @@ function deactivateSegment(name,segment)
         s.onDisable(players[name])
     end
     players[name].activeSegments[segment]=nil
-    _S.global.showMenu(name)
+    if s.menu then
+        _S.global.showMenu(name)
+    end
 end
 
 function bindChatCommands()
@@ -2204,9 +2208,6 @@ _S.global = {
     callbacks={
         newGame=function()
             _S.global.tempMapName=nil
-        end,
-        newPlayer=function(player)
-            _S.global.showMenu(player.name)
         end,
         playerLeft=function(player)
             for n,p in pairs(players) do
