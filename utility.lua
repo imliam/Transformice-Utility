@@ -2205,9 +2205,6 @@ _S.global = {
         newGame=function()
             _S.global.tempMapName=nil
         end,
-        newPlayer=function(player)
-            _S.global.showMenu(player.name)
-        end,
         playerLeft=function(player)
             for n,p in pairs(players) do
                 if p.selected[player.name] then
