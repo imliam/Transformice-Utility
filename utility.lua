@@ -1589,9 +1589,13 @@ end
 function activateSegment(name,segment)
     local s=_S[segment]
     if s.callbacks.keyboard then
-        for key in pairs(s.callbacks.keyboard) do
-            system.bindKeyboard(name,key,true,true)
-            system.bindKeyboard(name,key,false,true)
+        for key, implementation in pairs(s.callbacks.keyboard) do
+            if type(implementation) == "function" or implementation.down then
+                system.bindKeyboard(name,key,true,true)
+            end
+            if type(implementation) == "function" or implementation.up then
+                system.bindKeyboard(name,key,false,true)
+            end
         end
     end
     if s.onEnable then
@@ -1604,19 +1608,25 @@ end
 function deactivateSegment(name,segment)
     local s=_S[segment]
     local mouse
-    local keys={}
+    local keys_up={}
+    local keys_down={}
+    players[name].activeSegments[segment]=nil
     if s.callbacks.keyboard then
         for key in pairs(s.callbacks.keyboard) do
-            keys[key]=true
+            keys_up[key]=true
+            keys_down[key]=true
         end
         
         -- See if anything else needs to use it, if so it won't unbind.
-        for seg in pairs(players[name].activeSegments) do
-            if _S[seg] and _S[seg].callbacks then
+        for seg, isActive in pairs(players[name].activeSegments) do
+            if isActive and _S[seg] and _S[seg].callbacks then
                 if _S[seg].callbacks.keyboard then
-                    for key in pairs(_S[seg].callbacks.keyboard) do
-                        if keys[key] then
-                            keys[key]=nil
+                    for key, implementation in pairs(_S[seg].callbacks.keyboard) do
+                        if type(implementation) == "function" or implementation.down then
+                            keys_down[key] = nil
+                        end
+                        if type(implementation) == "function" or implementation.up then
+                            keys_up[key] = nil
                         end
                     end
                 end
@@ -1625,15 +1635,16 @@ function deactivateSegment(name,segment)
                 end
             end
         end
-        for key in pairs(keys) do
+        for key in pairs(keys_down) do
             system.bindKeyboard(name,key,true,false)
+        end
+        for key in pairs(keys_up) do
             system.bindKeyboard(name,key,false,false)
         end
     end
     if s.onDisable then
         s.onDisable(players[name])
     end
-    players[name].activeSegments[segment]=nil
     _S.global.showMenu(name)
 end
 
@@ -1807,7 +1818,15 @@ function eventKeyboard(name,key,down,x,y)
         if s.callbacks.keyboard then
             local cb=s.callbacks.keyboard[key]
             if cb then
-                cb(player,down,x,y)
+                if type(cb) == "function" then
+                    cb(player,down,x,y)
+                else
+                    if down and cb.down then
+                        cb.down(player,x,y)
+                    elseif not down and cb.up then
+                        cb.up(player,x,y)
+                    end
+                end
             end
         end
     end)
@@ -1949,8 +1968,13 @@ function eventNewPlayer(name)
     tfm.exec.lowerSyncDelay(name)
 
     -- Activates segments
-    for sn,s in pairs(_S) do
-        if player.activeSegments[sn] then
+    --for sn,s in pairs(_S) do
+    --    if player.activeSegments[sn] then
+    --        activateSegment(name,sn)
+    --    end
+    --end
+    for sn, v in pairs(player.activeSegments) do
+        if v then
             activateSegment(name,sn)
         end
     end
@@ -2253,17 +2277,15 @@ _S.global = {
             [KEYS.CTRL]=function(player,down,x,y)
                 player.ctrl=down
             end,
-            [KEYS.LEFT]=function(player,down,x,y)
-                if down then player.facingRight=false end
-            end,
-            [KEYS.RIGHT]=function(player,down,x,y)
-                if down then player.facingRight=true end
-            end,
-            [KEYS.UP]=function(player,down,x,y) end,
-            [KEYS.DOWN]=function(player,down,x,y) end,
-            [KEYS.DELETE]=function(player,down,x,y)
+            [KEYS.LEFT]={down=function(player,x,y)
+                player.facingRight=false
+            end},
+            [KEYS.RIGHT]={down=function(player,x,y)
+                player.facingRight=true
+            end},
+            [KEYS.DELETE]={down=function(player,x,y)
                 tfm.exec.killPlayer(player.name)
-            end,
+            end},
         },
         mouse={
             pr=-20,
@@ -3331,7 +3353,7 @@ _S.checkpoints = {
             end
         end,
         keyboard={
-            [KEYS.E]=function(player,down,x,y)
+            [KEYS.E]={down=function(player,x,y)
                 if player.lastSpawn and player.lastSpawn+3000<=os.time() and (not player.checkpoint or player.checkpoint.timestamp+3000<=os.time()) then
                     player.checkpoint={
                         timestamp=os.time(),
@@ -3341,13 +3363,13 @@ _S.checkpoints = {
                     }
                     ui.addTextArea(-1,"",player.name,x-2,y-2,4,4,0x44cc44,0xffffff,0.5)
                 end
-            end,
-            [KEYS.DELETE]=function(player,down,x,y)
+            end},
+            [KEYS.DELETE]={down=function(player,x,y)
                 if player.checkpoint then
                     player.checkpoint=nil
                     ui.removeTextArea(-1,player.name)
                 end
-            end
+            end}
         }
     }
 }
@@ -3372,24 +3394,20 @@ _S.conj = {
 _S.dash = {
     callbacks={
         keyboard={
-            [KEYS.LEFT]=function(player,down,x,y) 
-                if down then
-                    if player.dash and player.dash.direction=="left" and player.dash.time>os.time()-250 and (player.lastDash and player.lastDash<os.time()-5000 or not player.lastDash) then
-                        tfm.exec.movePlayer(player.name, 0, 0, false, -100, 0, false)
-                        player.lastDash=os.time()
-                    end
-                    player.dash={time=os.time(),direction="left"}
+            [KEYS.LEFT]={down=function(player,x,y)
+                if player.dash and player.dash.direction=="left" and player.dash.time>os.time()-250 and (player.lastDash and player.lastDash<os.time()-5000 or not player.lastDash) then
+                    tfm.exec.movePlayer(player.name, 0, 0, false, -100, 0, false)
+                    player.lastDash=os.time()
                 end
-            end,
-            [KEYS.RIGHT]=function(player,down,x,y) 
-                if down then
-                    if player.dash and player.dash.direction=="right" and player.dash.time>os.time()-250 and (player.lastDash and player.lastDash<os.time()-5000 or not player.lastDash) then
-                        tfm.exec.movePlayer(player.name, 0, 0, false, 100, 0, false)
-                        player.lastDash=os.time()
-                    end
-                    player.dash={time=os.time(),direction="right"}
+                player.dash={time=os.time(),direction="left"}
+            end},
+            [KEYS.RIGHT]={down=function(player,x,y)
+                if player.dash and player.dash.direction=="right" and player.dash.time>os.time()-250 and (player.lastDash and player.lastDash<os.time()-5000 or not player.lastDash) then
+                    tfm.exec.movePlayer(player.name, 0, 0, false, 100, 0, false)
+                    player.lastDash=os.time()
                 end
-            end,
+                player.dash={time=os.time(),direction="right"}
+            end},
         }
     }
 }
@@ -3474,18 +3492,18 @@ _S.doll = {
     end,
     callbacks={
         keyboard={
-            [KEYS.U]=function(player,down,x,y)
-                if down then _S.doll.move(player,"up") end
-            end,
-            [KEYS.J]=function(player,down,x,y)
-                if down then _S.doll.move(player,"down") end
-            end,
-            [KEYS.H]=function(player,down,x,y)
-                if down then _S.doll.move(player,"left") end
-            end,
-            [KEYS.K]=function(player,down,x,y)
-                if down then _S.doll.move(player,"right") end
-            end
+            [KEYS.U]={down=function(player,x,y)
+                _S.doll.move(player,"up")
+            end},
+            [KEYS.J]={down=function(player,x,y)
+                _S.doll.move(player,"down")
+            end},
+            [KEYS.H]={down=function(player,x,y)
+                _S.doll.move(player,"left")
+            end},
+            [KEYS.K]={down=function(player,x,y)
+                _S.doll.move(player,"right")
+            end}
         },
     }
 }
@@ -3602,16 +3620,16 @@ _S.draw = {
             end
         end,
         keyboard={
-            [KEYS.Z]=function(player,down,x,y)
-                if down and player.ctrl then
+            [KEYS.Z]={down=function(player,x,y)
+                if player.ctrl then
                     _S.draw.undo(player.name)
                 end
-            end,
-            [KEYS.W]=function(player,down,x,y)
-                _S.draw.callbacks.keyboard[KEYS.Z](player,down,x,y)
-            end,
-            [KEYS.C]=function(player,down,x,y)
-                if ranks[player.name]>=RANKS.ROOM_ADMIN and down then
+            end},
+            [KEYS.W]={down=function(player,x,y)
+                _S.draw.callbacks.keyboard[KEYS.Z].down(player,x,y)
+            end},
+            [KEYS.C]={down=function(player,x,y)
+                if ranks[player.name]>=RANKS.ROOM_ADMIN then
                     if player.shift then
                         player.draw.enteringColor={}
                         _S.draw.onEnable(player,true)
@@ -3619,7 +3637,7 @@ _S.draw = {
                         _S.draw.addHexCharToColor(player,'C')
                     end
                 end
-            end,
+            end},
             [KEYS.A]=hexColorEntering('A'),
             [KEYS.B]=hexColorEntering('B'),
             [KEYS.D]=hexColorEntering('D'),
@@ -4018,20 +4036,16 @@ _S.drawOnMe = {
             end
         },
         keyboard={
-            [KEYS.LEFT]=function(player,down,x,y)
-                if down then
-                    if player.drawOnMe.imgs and player.drawOnMe.lastFacing=="right" then
-                        _S.drawOnMe.redraw(player,"left")
-                    end
+            [KEYS.LEFT]={down=function(player,x,y)
+                if player.drawOnMe.imgs and player.drawOnMe.lastFacing=="right" then
+                    _S.drawOnMe.redraw(player,"left")
                 end
-            end,
-            [KEYS.RIGHT]=function(player,down,x,y)
-                if down then
-                    if player.drawOnMe.imgs and player.drawOnMe.lastFacing=="left" then
-                        _S.drawOnMe.redraw(player,"right")
-                    end
+            end},
+            [KEYS.RIGHT]={down=function(player,x,y)
+                if player.drawOnMe.imgs and player.drawOnMe.lastFacing=="left" then
+                    _S.drawOnMe.redraw(player,"right")
                 end
-            end,
+            end},
         },
         newGame=function()
             for name in pairs(tfm.get.room.playerList) do
@@ -4091,8 +4105,8 @@ _S.ffa = {
     end,
     callbacks={
         keyboard={
-            [KEYS.DOWN]=function(player,down,x,y)
-                if down and not tfm.get.room.playerList[player.name].isDead then
+            [KEYS.DOWN]={down=function(player,x,y)
+                if not tfm.get.room.playerList[player.name].isDead then
                     if player.ffa.timestamp<=os.time()-player.ffa.cooldown then
                         local angle=(player.facingRight and 90 or 270)+(player.ffa.object==17 and 0 or -90)
                         table.insert(_S.ffa.toDespawn,{
@@ -4102,7 +4116,7 @@ _S.ffa = {
                         player.ffa.timestamp=os.time()
                     end
                 end
-            end,
+            end},
         },
         chatCommand={
             off={
@@ -4229,14 +4243,12 @@ _S.fireworks = {
             _S.fireworks.counter = _S.fireworks.counter + 0.5
         end,
         keyboard={
-            [KEYS.SPACE]=function(player,down,x,y)
-                if down then
-                    if _S.fireworks.players[player] < os.time()-500 then
-                        _S.fireworks.players[player] = os.time()
-                        _S.fireworks.selectAndFire(x,y)
-                    end
+            [KEYS.SPACE]={down=function(player,x,y)
+                if _S.fireworks.players[player] < os.time()-500 then
+                    _S.fireworks.players[player] = os.time()
+                    _S.fireworks.selectAndFire(x,y)
                 end
-            end,
+            end},
         },
     },
     timedEvent=function(ms, r, f, ...)
@@ -4450,11 +4462,9 @@ _S.flames = {
 _S.fly = {
     callbacks={
         keyboard={
-            [KEYS.SPACE]=function(player,down,x,y)
-                if down then
-                    tfm.exec.movePlayer(player.name,0,0,true,0,-50,true)
-                end
-            end,
+            [KEYS.SPACE]={down=function(player,x,y)
+                tfm.exec.movePlayer(player.name,0,0,true,0,-50,true)
+            end},
         },
     },
 }
@@ -5430,26 +5440,22 @@ _S.images = {
     },
     callbacks={
         keyboard={
-            [KEYS.LEFT]=function(player,down,x,y)
-                if down then
-                    if player.sprite and player.sprite.facingRight and _S.images.sprites[player.sprite.category][player.sprite.id].left then
-                        _S.images.showImage(player)
-                    end
+            [KEYS.LEFT]={down=function(player,x,y)
+                if player.sprite and player.sprite.facingRight and _S.images.sprites[player.sprite.category][player.sprite.id].left then
+                    _S.images.showImage(player)
                 end
-            end,
-            [KEYS.RIGHT]=function(player,down,x,y)
-                if down then
-                    if player.sprite and not player.sprite.facingRight and _S.images.sprites[player.sprite.category][player.sprite.id].right then
-                        _S.images.showImage(player)
-                    end
+            end},
+            [KEYS.RIGHT]={down=function(player,x,y)
+                if player.sprite and not player.sprite.facingRight and _S.images.sprites[player.sprite.category][player.sprite.id].right then
+                    _S.images.showImage(player)
                 end
-            end,
-            [KEYS.E]=function(player,down,x,y)
-                if down and player.sprite then
+            end},
+            [KEYS.E]={down=function(player,x,y)
+                if player.sprite then
                     local fnc=_S.images.sprites[player.sprite.category][player.sprite.id].action
                     if fnc then fnc(player,x,y) end
                 end
-            end
+            end}
         },
         chatCommand={
             img={
@@ -5784,7 +5790,7 @@ _S.meep = {
             end
         end,
         keyboard={
-            [KEYS.SPACE]=function(player,down,x,y)
+            [KEYS.SPACE]={down=function(player,x,y)
                 if player.meepTimer<os.time()-10100 and player.meepPower then -- time for the meep bar to restore
                     player.meepTimer=os.time()
                     for k,v in pairs(tfm.get.room.playerList) do
@@ -5798,7 +5804,7 @@ _S.meep = {
                         end
                     end
                 end
-            end
+            end}
         }
     }
 }
@@ -6298,32 +6304,28 @@ _S.pet = {
 _S.projection = {
     callbacks={
         keyboard={
-            [KEYS.LEFT]=function(player,down,x,y) 
-                if down then
-                    if player.dash and player.dash.direction=="left" and player.dash.time>os.time()-250 and (player.lastDash and player.lastDash<os.time()-3000 or not player.lastDash) then
-                        tfm.exec.movePlayer(player.name, x-100, y)
-                        player.lastDash=os.time()
-                        for i=1,6 do
-                            tfm.exec.displayParticle(3,x,y,math.random(-1,1),math.random(-1,1),0,0)
-                            tfm.exec.displayParticle(35,x-50,y,0,0,0,0)
-                        end
+            [KEYS.LEFT]={down=function(player,x,y)
+                if player.dash and player.dash.direction=="left" and player.dash.time>os.time()-250 and (player.lastDash and player.lastDash<os.time()-3000 or not player.lastDash) then
+                    tfm.exec.movePlayer(player.name, x-100, y)
+                    player.lastDash=os.time()
+                    for i=1,6 do
+                        tfm.exec.displayParticle(3,x,y,math.random(-1,1),math.random(-1,1),0,0)
+                        tfm.exec.displayParticle(35,x-50,y,0,0,0,0)
                     end
-                    player.dash={time=os.time(),direction="left"}
                 end
-            end,
-            [KEYS.RIGHT]=function(player,down,x,y) 
-                if down then
-                    if player.dash and player.dash.direction=="right" and player.dash.time>os.time()-250 and (player.lastDash and player.lastDash<os.time()-3000 or not player.lastDash) then
-                        tfm.exec.movePlayer(player.name, x+100, y)
-                        player.lastDash=os.time()
-                        for i=1,6 do
-                            tfm.exec.displayParticle(3,x,y,math.random(-1,1),math.random(-1,1),0,0)
-                            tfm.exec.displayParticle(35,x+50,y,0,0,0,0)
-                        end
+                player.dash={time=os.time(),direction="left"}
+            end},
+            [KEYS.RIGHT]={down=function(player,x,y)
+                if player.dash and player.dash.direction=="right" and player.dash.time>os.time()-250 and (player.lastDash and player.lastDash<os.time()-3000 or not player.lastDash) then
+                    tfm.exec.movePlayer(player.name, x+100, y)
+                    player.lastDash=os.time()
+                    for i=1,6 do
+                        tfm.exec.displayParticle(3,x,y,math.random(-1,1),math.random(-1,1),0,0)
+                        tfm.exec.displayParticle(35,x+50,y,0,0,0,0)
                     end
-                    player.dash={time=os.time(),direction="right"}
                 end
-            end,
+                player.dash={time=os.time(),direction="right"}
+            end},
         }
     }
 }
@@ -6357,8 +6359,8 @@ _S.prophunt = {
             ]]
         end,
         keyboard={
-            [KEYS.E]=function(player,down,x,y)
-                if down and not tfm.get.room.playerList[player.name].isDead then
+            [KEYS.E]={down=function(player,x,y)
+                if not tfm.get.room.playerList[player.name].isDead then
                     local closest
                     for _,deco in pairs(map.decorations) do
                         if pythag(x,y,deco.x,deco.y,20) and _S.images.sprites.props[deco.id] then
@@ -6372,9 +6374,9 @@ _S.prophunt = {
                         _S.images.selectImage(player,closest.id,"props")
                     end
                 end
-            end,
-            [KEYS.SPACE]=function(player,down,x,y)
-                if down and not tfm.get.room.playerList[player.name].isDead and player.sprite then
+            end},
+            [KEYS.SPACE]={down=function(player,x,y)
+                if not tfm.get.room.playerList[player.name].isDead and player.sprite then
                     if _S.hide.hidden[player.name] then
                         tfm.exec.movePlayer(player.name,_S.prophunt.props[player.name].x,_S.prophunt.props[player.name].y)
                         tfm.exec.removeImage(_S.prophunt.props[player.name].img)
@@ -6392,7 +6394,7 @@ _S.prophunt = {
                         }
                     end
                 end
-            end,
+            end},
         }
     }
 }
@@ -6425,26 +6427,24 @@ _S.rainbow = {
     end,
     callbacks={
         keyboard={
-            [KEYS.SPACE]=function(player,down,x,y)
-                if down then
-                    if _S.rainbow.players[player] < os.time()-500 then
-                        _S.rainbow.players[player] = os.time()
-                        for a = math.pi, 2*math.pi, math.pi/50 do
-                            local s = 3
-                            vx1, vy1 = s*math.cos(a), s*math.sin(a)
-                            local m = -3/100
-                            vx,vy=vx1,vy1
-                            tfm.exec.displayParticle(1, x, y+12, vx, vy, m*vx, m*vy)
-                            vx,vy=vx1*1.1,vy1*1.1
-                            tfm.exec.displayParticle(9, x, y+12, vx, vy, m*vx, m*vy)
-                            vx,vy=vx1*1.1,vy1*1.2
-                            tfm.exec.displayParticle(11, x, y+12, vx, vy, m*vx, m*vy)
-                            vx,vy=vx1*1.3,vy1*1.3
-                            tfm.exec.displayParticle(13, x, y+12, vx, vy, m*vx, m*vy)
-                        end
+            [KEYS.SPACE]={down=function(player,x,y)
+                if _S.rainbow.players[player] < os.time()-500 then
+                    _S.rainbow.players[player] = os.time()
+                    for a = math.pi, 2*math.pi, math.pi/50 do
+                        local s = 3
+                        vx1, vy1 = s*math.cos(a), s*math.sin(a)
+                        local m = -3/100
+                        vx,vy=vx1,vy1
+                        tfm.exec.displayParticle(1, x, y+12, vx, vy, m*vx, m*vy)
+                        vx,vy=vx1*1.1,vy1*1.1
+                        tfm.exec.displayParticle(9, x, y+12, vx, vy, m*vx, m*vy)
+                        vx,vy=vx1*1.1,vy1*1.2
+                        tfm.exec.displayParticle(11, x, y+12, vx, vy, m*vx, m*vy)
+                        vx,vy=vx1*1.3,vy1*1.3
+                        tfm.exec.displayParticle(13, x, y+12, vx, vy, m*vx, m*vy)
                     end
                 end
-            end,
+            end},
         },
     },
 }
@@ -6505,16 +6505,12 @@ _S.retro = {
 _S.speed = {
     callbacks={
         keyboard={
-            [KEYS.LEFT]=function(player,down,x,y) 
-                if down then
-                    tfm.exec.movePlayer(player.name, 0, 0, false, -player.speedPower, 0, false)
-                end
-            end,
-            [KEYS.RIGHT]=function(player,down,x,y)
-                if down then
-                    tfm.exec.movePlayer(player.name, 0, 0, false, player.speedPower, 0, false)
-                end
-            end,
+            [KEYS.LEFT]={down=function(player,x,y)
+                tfm.exec.movePlayer(player.name, 0, 0, false, -player.speedPower, 0, false)
+            end},
+            [KEYS.RIGHT]={down=function(player,x,y)
+                tfm.exec.movePlayer(player.name, 0, 0, false, player.speedPower, 0, false)
+            end},
         }
     }
 }
