@@ -96,8 +96,6 @@ _S.global = {
             [KEYS.RIGHT]=function(player,down,x,y)
                 if down then player.facingRight=true end
             end,
-            [KEYS.UP]=function(player,down,x,y) end,
-            [KEYS.DOWN]=function(player,down,x,y) end,
             [KEYS.DELETE]=function(player,down,x,y)
                 tfm.exec.killPlayer(player.name)
             end,
