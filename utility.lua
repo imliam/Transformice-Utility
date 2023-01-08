@@ -1610,6 +1610,7 @@ function deactivateSegment(name,segment)
     local mouse
     local keys_up={}
     local keys_down={}
+    players[name].activeSegments[segment]=nil
     if s.callbacks.keyboard then
         for key in pairs(s.callbacks.keyboard) do
             keys_up[key]=true
@@ -1617,7 +1618,6 @@ function deactivateSegment(name,segment)
         end
         
         -- See if anything else needs to use it, if so it won't unbind.
-        players[name].activeSegments[segment]=nil
         for seg, isActive in pairs(players[name].activeSegments) do
             if isActive and _S[seg] and _S[seg].callbacks then
                 if _S[seg].callbacks.keyboard then
