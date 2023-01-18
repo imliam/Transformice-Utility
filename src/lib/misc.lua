@@ -114,7 +114,7 @@ function getInternalRoomName()
         return tfm.get.room.name:sub(2)
     end
 
-    if string.find(tfm.get.room.name:sub(1,2)=="e2" then
+    if string.find(tfm.get.room.name:sub(1,2)) == "e2" then
         roomName = tfm.get.room.name:sub(3)
     end
 
